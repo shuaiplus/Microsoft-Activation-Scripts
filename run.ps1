@@ -1,44 +1,46 @@
-# ==========================================
-# 核心配置
-$DownloadURL = 'https://get.elyar.de/MAS_AIO.cmd'
-# ==========================================
+# <--- 这一行请保留为空，用来吸收可能存在的 BOM 字符 --->
 
-# 1. 设置协议
+# 1. 设置安全协议
 try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 
-# 2. 准备路径
-$rand = [Guid]::NewGuid().Guid
+# 2. 准备临时路径
+$rand = Get-Random
 $FilePath = "$env:TEMP\MAS_$rand.cmd"
 
-# 3. 开始下载
 try {
     Write-Host "正在连接 get.elyar.de 下载激活组件..." -ForegroundColor Cyan
     
-    # === 修复点：移除了复杂的 Get-Date 参数，改用 Get-Random ===
-    # 这样生成的 URL 绝对纯净，不会有格式错误
-    $CleanURL = "$DownloadURL?r=$(Get-Random)"
+    # ==========================================
+    # 核心配置：直接定义 URL (移到此处更安全)
+    $TargetUrl = "https://get.elyar.de/MAS_AIO.cmd"
+    # ==========================================
     
+    # 拼接防缓存参数 (使用简单的 &r=随机数)
+    $FinalUrl = "$TargetUrl?r=$rand"
+    
+    # 兼容性下载逻辑
     if ($PSVersionTable.PSVersion.Major -ge 3) {
-        Invoke-RestMethod -Uri $CleanURL -OutFile $FilePath
+        Invoke-RestMethod -Uri $FinalUrl -OutFile $FilePath
     } else {
         $wc = New-Object System.Net.WebClient
-        $wc.DownloadFile($CleanURL, $FilePath)
+        $wc.DownloadFile($FinalUrl, $FilePath)
     }
 }
 catch {
-    Write-Host "下载失败！请检查您的网络连接。" -ForegroundColor Red
-    Write-Host "错误详情: $($_.Exception.Message)" -ForegroundColor Red
-    
-    # 调试信息：如果再次失败，让用户看到尝试下载的链接到底长什么样
-    Write-Host "调试链接: $CleanURL" -ForegroundColor Gray
+    Write-Host "下载失败！" -ForegroundColor Red
+    Write-Host "错误信息: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "尝试链接: $FinalUrl" -ForegroundColor Gray
     return
 }
 
-# 4. 运行
+# 3. 运行脚本
 if (Test-Path $FilePath) {
     Write-Host "下载成功，正在启动..." -ForegroundColor Green
-    $process = Start-Process -FilePath "$env:SystemRoot\system32\cmd.exe" `
+    
+    Start-Process -FilePath "$env:SystemRoot\system32\cmd.exe" `
         -ArgumentList "/c """"$FilePath"" $args""" `
         -Verb RunAs -PassThru -Wait
+    
+    # 清理
     Remove-Item -Path $FilePath -ErrorAction SilentlyContinue
 }
