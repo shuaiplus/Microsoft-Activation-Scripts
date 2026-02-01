@@ -1,0 +1,37 @@
+name: Auto Sync Upstream
+
+permissions:
+  contents: write
+
+on:
+  schedule:
+    # 计划任务：每12小时检查一次 (UTC时间)
+    - cron: '0 */12 * * *' 
+  workflow_dispatch: # 允许手动点击按钮触发
+
+jobs:
+  sync_with_upstream:
+    name: Sync with Upstream
+    runs-on: ubuntu-latest
+    if: ${{ github.event.repository.fork }}
+
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v3
+
+      - name: Sync Upstream
+        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4
+        with:
+          # 原作者的仓库地址
+          upstream_sync_repo: massgravel/Microsoft-Activation-Scripts
+          # 原作者的分支名 (Massgrave 用的是 master)
+          upstream_sync_branch: master
+          # 你自己的分支名 (如果你没改过，通常也是 master，新仓库可能是 main)
+          target_sync_branch: master
+          # 设置 github token 
+          target_repo_token: ${{ secrets.GITHUB_TOKEN }}                                     
+          # 设置测试模式为 false，表示真的要运行
+          test_mode: false
+
+      - name: Timestamp
+        run: date
