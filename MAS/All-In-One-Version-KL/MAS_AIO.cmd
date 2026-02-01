@@ -1,4 +1,8 @@
-@::5210random3692veryrandom2294f458raaaaandomcb96db3ba0c5da2e
+@::Please stop false-flagging this script over and over. This is the 3rd time I've had to update the script to deal with the false positives.
+@::Nothing in this script is malicious and it is used by thousands of people *daily*.
+@::Is a real person even the one deciding to flag this or is it Copilot told to flag anything it decides not to like?
+@::If a campaign is using this script as a cover, please flag parts of the campaign instead of the script. This isn't the first time we experienced collateral damage due to campaigns completely unrelated to us.
+@::If you disagree that MAS is not malicious, we would appreciate if you contacted us to explain what constitutes MAS as "Sonbokli" and we'll look into it. Thank you. 
 @set masver=3.10
 @setlocal DisableDelayedExpansion
 @echo off
