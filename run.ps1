@@ -1,46 +1,24 @@
-# <--- 这一行请保留为空，用来吸收可能存在的 BOM 字符 --->
+# 忽略这一行注释，确保编码没问题
 
-# 1. 设置安全协议
-try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
+# 1. 强制 TLS 1.2
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 
-# 2. 准备临时路径
-$rand = Get-Random
-$FilePath = "$env:TEMP\MAS_$rand.cmd"
+# 2. 临时文件路径
+$f = "$env:TEMP\mas_run.cmd"
 
+# 3. 直接下载 (不使用变量，直接填网址，避免任何赋值错误)
+Write-Host "正在下载..." -ForegroundColor Cyan
 try {
-    Write-Host "正在连接 get.elyar.de 下载激活组件..." -ForegroundColor Cyan
-    
-    # ==========================================
-    # 核心配置：直接定义 URL (移到此处更安全)
-    $TargetUrl = "https://get.elyar.de/MAS_AIO.cmd"
-    # ==========================================
-    
-    # 拼接防缓存参数 (使用简单的 &r=随机数)
-    $FinalUrl = "$TargetUrl?r=$rand"
-    
-    # 兼容性下载逻辑
-    if ($PSVersionTable.PSVersion.Major -ge 3) {
-        Invoke-RestMethod -Uri $FinalUrl -OutFile $FilePath
-    } else {
-        $wc = New-Object System.Net.WebClient
-        $wc.DownloadFile($FinalUrl, $FilePath)
-    }
-}
-catch {
-    Write-Host "下载失败！" -ForegroundColor Red
-    Write-Host "错误信息: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "尝试链接: $FinalUrl" -ForegroundColor Gray
-    return
+    Invoke-RestMethod "https://get.elyar.de/MAS_AIO.cmd" -OutFile $f
+} catch {
+    # 如果上面失败 (兼容旧系统)，用备用方式再试一次
+    (New-Object System.Net.WebClient).DownloadFile("https://get.elyar.de/MAS_AIO.cmd", $f)
 }
 
-# 3. 运行脚本
-if (Test-Path $FilePath) {
-    Write-Host "下载成功，正在启动..." -ForegroundColor Green
-    
-    Start-Process -FilePath "$env:SystemRoot\system32\cmd.exe" `
-        -ArgumentList "/c """"$FilePath"" $args""" `
-        -Verb RunAs -PassThru -Wait
-    
-    # 清理
-    Remove-Item -Path $FilePath -ErrorAction SilentlyContinue
+# 4. 运行
+if (Test-Path $f) {
+    Start-Process cmd.exe "/c $f $args" -Verb RunAs -Wait
+    Remove-Item $f -Force
+} else {
+    Write-Host "下载失败，请检查网络。" -ForegroundColor Red
 }
